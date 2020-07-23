@@ -1,3 +1,7 @@
+/**
+ * В этом файле мы обрабатываем методы получения и изменения данных (API)
+ */
+
 const fs = require("fs");
 const path = require("path");
 
@@ -47,12 +51,14 @@ module.exports = function (app) {
     });
 };
 
+// загрузка данных пользователя
 function loadData(login) {
     return JSON.parse(
         fs.readFileSync(path.join(__dirname, `data/${login}.json`))
     );
 }
 
+// сохранение данных пользователя
 function saveData(login, data) {
     fs.writeFileSync(
         path.join(__dirname, `data/${login}.json`),

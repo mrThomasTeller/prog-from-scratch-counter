@@ -4,15 +4,19 @@
 
 const path = require("path");
 const express = require("express");
+// сначала усановите модуль npm i body-parser --save
 const bodyParser = require("body-parser");
 const routing = require("./routing.js");
 const api = require("./api.js");
+// сначала усановите модуль npm i express-session --save
 const session = require("express-session");
 
 const app = express();
 
+// настраиваем механизм сессий
 app.use(
     session({
+        // создайте свой случайный секретный ключ
         secret: "rUNc',oY`{(b",
         saveUninitialized: true,
         resave: false,
