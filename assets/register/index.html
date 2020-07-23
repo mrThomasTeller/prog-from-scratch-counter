@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Counter: Регистрация</title>
+        <link rel="stylesheet" href="index.css" />
+    </head>
+
+    <body>
+        <form action="/register/" method="POST">
+            {{message}}
+            <div class="row"><input name="login" placeholder="Логин" /></div>
+            <div class="row">
+                <input name="password" type="password" placeholder="Пароль" />
+            </div>
+            <div class="row">
+                <input
+                    name="password-repeat"
+                    type="password"
+                    placeholder="Повторите пароль"
+                />
+            </div>
+            <div class="row"><input type="submit" value="Регистрация" /></div>
+        </form>
+    </body>
+</html>

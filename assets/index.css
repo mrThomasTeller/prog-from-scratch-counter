@@ -44,3 +44,7 @@ body {
 .count:hover {
     opacity: 0.5;
 }
+
+.set-field {
+    margin-bottom: 30px;
+}

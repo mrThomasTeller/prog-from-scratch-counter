@@ -2,17 +2,26 @@
  * В этом файле мы создаём и запускаем сервер, который будет обрабатывать запросы от клиента.
  */
 
-const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
 const routing = require("./routing.js");
 const api = require("./api.js");
+const session = require("express-session");
 
 const app = express();
 
+app.use(
+    session({
+        secret: "rUNc',oY`{(b",
+        saveUninitialized: true,
+        resave: false,
+    })
+);
+
 // Настраиваем возможность принимать от клиента данные в формате JSON
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // подключаем обработку роутинга и API
 routing(app);

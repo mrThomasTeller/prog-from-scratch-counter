@@ -5,7 +5,7 @@ module.exports = function (app) {
     // обрабатываем запрос на получение значения счётчика
     app.get("/get-count", (req, res) => {
         // читаем данные из файла data.json
-        const data = loadData();
+        const data = loadData(req.session.login);
 
         // говорим, что ответом будут данные в формате JSON
         res.setHeader("Content-Type", "application/json");
@@ -18,7 +18,7 @@ module.exports = function (app) {
     app.post("/set-count", (req, res) => {
         // req.body - это тело запроса. Оно имеет формат JSON вида {"count": 0}.
         // Сохраняем полученные данные в файл
-        saveData(req.body);
+        saveData(req.session.login, req.body);
 
         // говорим клиенту, что всё прошло без ошибок
         res.send("ok");
@@ -26,30 +26,36 @@ module.exports = function (app) {
 
     // обрабатываем запрос на отнятие единицы от значения счётчика
     app.post("/minus", (req, res) => {
-        saveData({ count: loadData().count - 1 });
+        saveData(req.session.login, {
+            count: loadData(req.session.login).count - 1,
+        });
         res.send("ok");
     });
 
     // обрабатываем запрос на прибавление единицы к значению счётчика
     app.post("/plus", (req, res) => {
-        saveData({ count: loadData().count + 1 });
+        saveData(req.session.login, {
+            count: loadData(req.session.login).count + 1,
+        });
         res.send("ok");
     });
 
     // обрабатываем запрос на сброс значения счётика до нуля
     app.post("/reset", (req, res) => {
-        saveData({ count: 0 });
+        saveData(req.session.login, { count: 0 });
         res.send("ok");
     });
 };
 
-function loadData() {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, "../data.json")));
+function loadData(login) {
+    return JSON.parse(
+        fs.readFileSync(path.join(__dirname, `data/${login}.json`))
+    );
 }
 
-function saveData(data) {
+function saveData(login, data) {
     fs.writeFileSync(
-        path.join(__dirname, "../data.json"),
+        path.join(__dirname, `data/${login}.json`),
         JSON.stringify(data)
     );
 }
