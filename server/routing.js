@@ -5,11 +5,14 @@
 const fs = require("fs");
 const path = require("path");
 
-module.exports = function (app) {
+/**
+ * @param {import('mongodb').Db} db
+ */
+module.exports = function (app, db) {
     // обрабатываем запрос стартовой страницы. app.get - настраивает запросы на получение на данных
     app.get("/", (req, res) => {
         // проверяем авторизован ли пользователь
-        if (!req.session.login) {
+        if (!req.session.user) {
             // если нет - редиректим на страницу входа
             res.redirect("/login/");
             return;
@@ -20,7 +23,7 @@ module.exports = function (app) {
             .readFileSync(path.join(__dirname, "../assets/index.html"))
             .toString()
             // показываем логин пользователя на странице входа
-            .replace("{{login}}", req.session.login);
+            .replace("{{login}}", req.session.user.login);
 
         // говорим, что ответом будет документ в формате html
         res.setHeader("Content-Type", "text/html");
@@ -54,22 +57,19 @@ module.exports = function (app) {
     });
 
     // обрабатываем отправку формы входа
-    app.post("/login/", (req, res) => {
+    app.post("/login/", async (req, res) => {
         const login = req.body.login;
         const password = req.body.password;
 
-        const users = JSON.parse(
-            fs.readFileSync(path.join(__dirname, "users.json"))
-        );
+        const users = db.collection("users");
+
         // ищем пользователя с соответствующим логином и паролем
-        const user = users.find(
-            (x) => x.login === login && x.password === password
-        );
+        const user = await users.findOne({ login: login, password: password });
 
         // если такой пользователь существует
         if (user) {
             // ассоциируем сессию с введённым логином (теперь мы будем узнавать пользователя)
-            req.session.login = login;
+            req.session.user = user;
             res.redirect("/");
         } else {
             // если такого пользователя нет - помечаем, что он ввёл неправильные логин и пароль (чтобы показать соответствующее сообщение)
@@ -114,21 +114,20 @@ module.exports = function (app) {
     });
 
     // обрабатываем отправку формы регистрации
-    app.post("/register/", (req, res) => {
+    app.post("/register/", async (req, res) => {
         const login = req.body.login;
         const password = req.body.password;
         const passwordRepeat = req.body["password-repeat"];
 
-        const users = JSON.parse(
-            fs.readFileSync(path.join(__dirname, "users.json"))
-        );
+        const users = db.collection("users");
+        const user = await users.findOne({ login: login });
 
         // проверяем ошибки регистрации:
         if (password !== passwordRepeat) {
             // несовподающие пароли
             req.session.passwordsMissmatch = true;
             res.redirect("/register/");
-        } else if (users.some((x) => x.login === login)) {
+        } else if (user) {
             // такой пользователь уже существует
             req.session.existingUser = true;
             res.redirect("/register/");
@@ -138,20 +137,18 @@ module.exports = function (app) {
             res.redirect("/register/");
         } else {
             // если ошибок нет - создаём нового пользователя
-            users.push({ login: login, password: password });
-            fs.writeFileSync(
-                path.join(__dirname, "users.json"),
-                JSON.stringify(users)
-            );
+            const result = await users.insertOne({
+                login: login,
+                password: password,
+            });
+            const user = result.ops[0];
 
-            // создаём файл с данными пользователя
-            fs.writeFileSync(
-                path.join(__dirname, `data/${login}.json`),
-                JSON.stringify({ count: 0 })
-            );
+            // создаём данныме пользователя
+            const data = db.collection("data");
+            await data.insertOne({ count: 0, userId: user._id });
 
             // помечаем, что пользователь авторизован
-            req.session.login = login;
+            req.session.user = user;
 
             // редиректим на стартоую страницу
             res.redirect("/");
@@ -160,7 +157,7 @@ module.exports = function (app) {
 
     // обрабатываем запрос на выход
     app.post("/logout/", (req, res) => {
-        delete req.session.login;
+        delete req.session.user;
         res.redirect("/login/");
     });
 };

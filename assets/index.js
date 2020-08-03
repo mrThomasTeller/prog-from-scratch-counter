@@ -1,15 +1,13 @@
 let count = 0;
 
-function init() {
+async function init() {
     // отсылаем запрос на сервер по адресу /get-count, чтоб получить значение счётчика
-    fetch("/get-count").then((res) => {
-        res.json().then((data) => {
-            // меняем значение счётчика на клиенте
-            count = data.count;
-            // перерисовываем счётчик с новым значением
-            render();
-        });
-    });
+    const res = await fetch("/get-count");
+    const data = res.json();
+    // меняем значение счётчика на клиенте
+    count = data.count;
+    // перерисовываем счётчик с новым значением
+    render();
 
     // при клике на минус - отнимаем от счётчика единицу
     document.querySelector(".minus").addEventListener("click", () => {

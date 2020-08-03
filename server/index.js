@@ -10,6 +10,13 @@ const routing = require("./routing.js");
 const api = require("./api.js");
 // сначала усановите модуль npm i express-session --save
 const session = require("express-session");
+const MongoClient = require("mongodb").MongoClient;
+
+// создаем объект MongoClient и передаем ему строку подключения
+const mongoClient = new MongoClient("mongodb://localhost:27017/", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
 
 const app = express();
 
@@ -27,16 +34,24 @@ app.use(
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// подключаем обработку роутинга и API
-routing(app);
-api(app);
+let db;
+mongoClient.connect((err, client) => {
+    if (err) {
+        return console.log(err);
+    }
+    db = client.db("counter");
 
-// говорим, что статические файлы лежат в папке assets.
-// Теперь если клиент обратится за файлами index.js или index.css, то он получи
-// те что лежат в папке assets
-app.use("/", express.static(path.join(__dirname, "../assets")));
+    // подключаем обработку роутинга и API
+    routing(app, db);
+    api(app, db);
 
-// запускаем сервер на 3000 порту
-app.listen(3000, () => {
-    console.log("http://localhost:3000/");
+    // говорим, что статические файлы лежат в папке assets.
+    // Теперь если клиент обратится за файлами index.js или index.css, то он получи
+    // те что лежат в папке assets
+    app.use("/", express.static(path.join(__dirname, "../assets")));
+
+    // запускаем сервер на 3000 порту
+    app.listen(3000, () => {
+        console.log("http://localhost:3000/");
+    });
 });

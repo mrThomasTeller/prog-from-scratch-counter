@@ -5,11 +5,14 @@
 const fs = require("fs");
 const path = require("path");
 
-module.exports = function (app) {
+/**
+ * @param {import('mongodb').Db} db
+ */
+module.exports = function (app, db) {
     // обрабатываем запрос на получение значения счётчика
     app.get("/get-count", (req, res) => {
         // читаем данные из файла data.json
-        const data = loadData(req.session.login);
+        const data = loadData(req.session.user._id);
 
         // говорим, что ответом будут данные в формате JSON
         res.setHeader("Content-Type", "application/json");
@@ -22,7 +25,7 @@ module.exports = function (app) {
     app.post("/set-count", (req, res) => {
         // req.body - это тело запроса. Оно имеет формат JSON вида {"count": 0}.
         // Сохраняем полученные данные в файл
-        saveData(req.session.login, req.body);
+        saveData(req.session.user._id, req.body);
 
         // говорим клиенту, что всё прошло без ошибок
         res.send("ok");
@@ -30,38 +33,36 @@ module.exports = function (app) {
 
     // обрабатываем запрос на отнятие единицы от значения счётчика
     app.post("/minus", (req, res) => {
-        saveData(req.session.login, {
-            count: loadData(req.session.login).count - 1,
+        saveData(req.session.user._id, {
+            count: loadData(req.session.user._id).count - 1,
         });
         res.send("ok");
     });
 
     // обрабатываем запрос на прибавление единицы к значению счётчика
     app.post("/plus", (req, res) => {
-        saveData(req.session.login, {
-            count: loadData(req.session.login).count + 1,
+        saveData(req.session.user._id, {
+            count: loadData(req.session.user._id).count + 1,
         });
         res.send("ok");
     });
 
     // обрабатываем запрос на сброс значения счётика до нуля
     app.post("/reset", (req, res) => {
-        saveData(req.session.login, { count: 0 });
+        saveData(req.session.user._id, { count: 0 });
         res.send("ok");
     });
+
+    // загрузка данных пользователя
+    async function loadData(id) {
+        const data = db.collection("data");
+        console.log(id, await data.findOne({ userId: id }));
+        return await data.findOne({ userId: id });
+    }
+
+    // сохранение данных пользователя
+    async function saveData(id, userData) {
+        const data = db.collection("data");
+        await data.updateOne({ userId: id }, userData);
+    }
 };
-
-// загрузка данных пользователя
-function loadData(login) {
-    return JSON.parse(
-        fs.readFileSync(path.join(__dirname, `data/${login}.json`))
-    );
-}
-
-// сохранение данных пользователя
-function saveData(login, data) {
-    fs.writeFileSync(
-        path.join(__dirname, `data/${login}.json`),
-        JSON.stringify(data)
-    );
-}
