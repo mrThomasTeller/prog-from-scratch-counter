@@ -61,6 +61,7 @@ module.exports = function (app, db) {
         const login = req.body.login;
         const password = req.body.password;
 
+        // берём коллекцию users (если таковой нет, она будет создана автоматически)
         const users = db.collection("users");
 
         // ищем пользователя с соответствующим логином и паролем
@@ -143,9 +144,12 @@ module.exports = function (app, db) {
             });
             const user = result.ops[0];
 
-            // создаём данныме пользователя
+            // создаём данные пользователя
             const data = db.collection("data");
-            await data.insertOne({ count: 0, userId: user._id });
+            await data.insertOne({
+                count: 0,
+                userId: user._id,
+            });
 
             // помечаем, что пользователь авторизован
             req.session.user = user;

@@ -34,11 +34,14 @@ app.use(
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// созданём соединение с базой данных
 let db;
 mongoClient.connect((err, client) => {
     if (err) {
         return console.log(err);
     }
+
+    // выбираем нашу базу данных
     db = client.db("counter");
 
     // подключаем обработку роутинга и API

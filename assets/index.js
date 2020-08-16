@@ -3,7 +3,7 @@ let count = 0;
 async function init() {
     // отсылаем запрос на сервер по адресу /get-count, чтоб получить значение счётчика
     const res = await fetch("/get-count");
-    const data = res.json();
+    const data = await res.json();
     // меняем значение счётчика на клиенте
     count = data.count;
     // перерисовываем счётчик с новым значением
